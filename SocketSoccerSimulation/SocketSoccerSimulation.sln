@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketSoccerSimulation", "SocketSoccerSimulation\SocketSoccerSimulation.csproj", "{49E779AA-DB6F-467B-A1F7-251540BE9341}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketServer", "SocketServer\SocketServer.csproj", "{F8058FF5-3834-4C26-9340-9206473A5FFA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketServer", "SocketServer\SocketServer.csproj", "{F8058FF5-3834-4C26-9340-9206473A5FFA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketClient", "SocketClient\SocketClient.csproj", "{247F50BD-142B-47A9-B2E1-264481266582}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketClient", "SocketClient\SocketClient.csproj", "{247F50BD-142B-47A9-B2E1-264481266582}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoccerSimulation", "SoccerSimulation\SoccerSimulation.csproj", "{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{49E779AA-DB6F-467B-A1F7-251540BE9341}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{49E779AA-DB6F-467B-A1F7-251540BE9341}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{49E779AA-DB6F-467B-A1F7-251540BE9341}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{49E779AA-DB6F-467B-A1F7-251540BE9341}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F8058FF5-3834-4C26-9340-9206473A5FFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F8058FF5-3834-4C26-9340-9206473A5FFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8058FF5-3834-4C26-9340-9206473A5FFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,6 +23,10 @@ Global
 		{247F50BD-142B-47A9-B2E1-264481266582}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{247F50BD-142B-47A9-B2E1-264481266582}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{247F50BD-142B-47A9-B2E1-264481266582}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

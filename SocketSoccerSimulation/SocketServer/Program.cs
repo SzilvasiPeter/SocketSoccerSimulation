@@ -14,7 +14,7 @@ namespace SocketServer
                 socket.Bind(endPoint);
                 socket.Listen(100);
 
-                while (Console.ReadLine() != "e")
+                while (true)
                 {
                     Socket acceptedSocket = socket.Accept();
                     using (NetworkStream stream = new NetworkStream(acceptedSocket, true))

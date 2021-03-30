@@ -14,7 +14,7 @@ namespace SocketClient
                 socket.Connect(endPoint);
                 using (NetworkStream stream = new NetworkStream(socket, true))
                 {
-                    int length = 10;
+                    int length = 3;
                     byte[] data = new byte[length];
                     Random random = new Random();
                     for (int i = 0; i < length; i++)
