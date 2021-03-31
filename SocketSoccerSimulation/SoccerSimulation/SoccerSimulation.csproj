@@ -11,12 +11,16 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Content\ball.xnb" />
+    <None Remove="Content\goal_keeper.xnb" />
     <None Remove="Content\soccer_field.xnb" />
     <None Remove="Icon.ico" />
     <None Remove="Icon.bmp" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\ball.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\goal_keeper.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\soccer_field.xnb">
