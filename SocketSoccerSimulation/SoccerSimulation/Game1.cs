@@ -19,6 +19,7 @@ namespace SoccerSimulation
         private int _screenWidth;
         private int _screenHeight;
         private double _goalLinePosition;
+        private bool _isGoal = false;
 
         private int _goalkeeperPositionX;
         private int _goalkeeperPositionY;
@@ -76,18 +77,25 @@ namespace SoccerSimulation
 
             _goalkeeperRectangle.X += 1 * _switchGoalKeeperSideMoving;
 
+            // Check if goalkeeper catch the ball
             if (_goalkeeperRectangle.Intersects(_ballRectangle))
             {
+                _isGoal = false;
+                using (StreamWriter sw = File.AppendText("goal.txt"))
+                {
+                    sw.WriteLine(_isGoal);
+                }
+
                 _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
             }
 
             // Check for goal
             if (_ballPosition.Y < _goalLinePosition)
             {
-                bool isGoal = (_ballPosition.X > _screenWidth * 0.375) && (_ballPosition.X < _screenWidth * 0.623);
+                _isGoal = (_ballPosition.X > _screenWidth * 0.375) && (_ballPosition.X < _screenWidth * 0.623);
                 using (StreamWriter sw = File.AppendText("goal.txt"))
                 {
-                    sw.WriteLine(isGoal);
+                    sw.WriteLine(_isGoal);
                 }
 
                 _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
