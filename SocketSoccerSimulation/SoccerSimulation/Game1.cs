@@ -1,40 +1,38 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Input.Touch;
-using System;
-using System.IO;
 
 namespace SoccerSimulation
 {
     public class Game1 : Game
     {
-        private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-
         private Texture2D _backgroundTexture;
         private Texture2D _ballTexture;
         private Texture2D _goalkeeperTexture;
 
-        private int _screenWidth;
-        private int _screenHeight;
-        private double _goalLinePosition;
-        private bool _isGoal = false;
+        private int _switchGoalKeeperSideMoving = 1;
 
-        private int _goalkeeperPositionX;
-        private int _goalkeeperPositionY;
-        private int _goalKeeperWidth;
-        private int _goalKeeperHeight;
-        private int _switchGoalKeeperSideMoving;
+        private double _leftGate;
+        private double _rightGate;
+        private double _goalLine;
 
         private Rectangle _ballRectangle;
         private Rectangle _goalkeeperRectangle;
         private Vector2 _ballPosition;
         private Vector2 _initialBallPosition;
 
+        private Socket _socket;
+        private float[] _coordinates = new float[2] { -1f, 5f };
+
         public Game1()
         {
-            _graphics = new GraphicsDeviceManager(this);
+            GraphicsDeviceManager graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
         }
@@ -43,7 +41,12 @@ namespace SoccerSimulation
         {
             ResetWindowSize();
             Window.ClientSizeChanged += (s, e) => ResetWindowSize();
-            TouchPanel.EnabledGestures = GestureType.Flick;
+
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Loopback, 5500);
+            _socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            _socket.Bind(endPoint);
+            _socket.Listen(100);
+            
             base.Initialize();
         }
 
@@ -62,44 +65,12 @@ namespace SoccerSimulation
                 Exit();
 
             // Shoot the ball
-            _ballPosition.X -= 0.5f;
-            _ballPosition.Y -= 3;
+            _ballPosition.X -= _coordinates[0];
+            _ballPosition.Y -= _coordinates[1];
 
-            // Update goal keeper
-            if (_goalkeeperRectangle.X <= _screenWidth * 0.375)
-            {
-                _switchGoalKeeperSideMoving = 1;
-            }
-            else if(_goalkeeperRectangle.X >= _screenWidth * 0.623)
-            {
-                _switchGoalKeeperSideMoving = -1;
-            }
-
-            _goalkeeperRectangle.X += 1 * _switchGoalKeeperSideMoving;
-
-            // Check if goalkeeper catch the ball
-            if (_goalkeeperRectangle.Intersects(_ballRectangle))
-            {
-                _isGoal = false;
-                using (StreamWriter sw = File.AppendText("goal.txt"))
-                {
-                    sw.WriteLine(_isGoal);
-                }
-
-                _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
-            }
-
-            // Check for goal
-            if (_ballPosition.Y < _goalLinePosition)
-            {
-                _isGoal = (_ballPosition.X > _screenWidth * 0.375) && (_ballPosition.X < _screenWidth * 0.623);
-                using (StreamWriter sw = File.AppendText("goal.txt"))
-                {
-                    sw.WriteLine(_isGoal);
-                }
-
-                _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
-            }
+            UpdateGoalKeeper();
+            IsGoalKeeperDefended();
+            IsGoalLanded();
 
             // Update ball position
             _ballRectangle.X = (int)_ballPosition.X;
@@ -108,34 +79,41 @@ namespace SoccerSimulation
             base.Update(gameTime);
         }
 
+        protected override void EndRun()
+        {
+            _socket.Dispose();
+            base.EndRun();
+        }
+
         private void ResetWindowSize()
         {
-            _screenWidth = Window.ClientBounds.Width;
-            _screenHeight = Window.ClientBounds.Height;
+            int screenWidth = Window.ClientBounds.Width;
+            int screenHeight = Window.ClientBounds.Height;
 
-            _initialBallPosition = new Vector2(_screenWidth / 2.0f, _screenHeight * 0.8f);
-            var ballDimension = (_screenWidth > _screenHeight) ? (int)(_screenWidth * 0.02) : (int)(_screenHeight * 0.035);
+            // Init Gate value
+            _leftGate = screenWidth * 0.375;
+            _rightGate = screenWidth * 0.623;
+            _goalLine = screenHeight * 0.05;
+            
+            // Init ball
+            var ballDimension = (screenWidth > screenHeight) ? (int)(screenWidth * 0.02) : (int)(screenHeight * 0.035);
+            _initialBallPosition = new Vector2(screenWidth / 2.0f, screenHeight * 0.8f);
             _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
-            _goalLinePosition = _screenHeight * 0.05;
-            _ballRectangle = new Rectangle((int)_initialBallPosition.X, (int)_initialBallPosition.Y,
-                ballDimension, ballDimension);
+            _ballRectangle = new Rectangle((int)_initialBallPosition.X, (int)_initialBallPosition.Y, ballDimension, ballDimension);
 
-            _goalkeeperPositionX = (_screenWidth - _goalKeeperWidth) / 2;
-            _goalkeeperPositionY = (int)(_screenHeight * 0.12);
-            _goalKeeperWidth = (int)(_screenWidth * 0.05);
-            _goalKeeperHeight = (int)(_screenWidth * 0.015);
-
-            _goalkeeperRectangle = new Rectangle(_goalkeeperPositionX, _goalkeeperPositionY,
-                    _goalKeeperWidth, _goalKeeperHeight);
-            _switchGoalKeeperSideMoving = -1;
+            // Init Goal keeper
+            int goalKeeperWidth = (int)_goalLine;
+            int goalKeeperHeight = (int)(screenWidth * 0.015);
+            int goalkeeperPositionX = (screenWidth - goalKeeperWidth) / 2;
+            int goalkeeperPositionY = (int)(screenHeight * 0.12);
+            _goalkeeperRectangle = new Rectangle(goalkeeperPositionX, goalkeeperPositionY,goalKeeperWidth, goalKeeperHeight);
         }
 
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Green);
 
-            var rectangle = new Rectangle(0, 0, _screenWidth, _screenHeight);
- 
+            var rectangle = new Rectangle(0, 0, Window.ClientBounds.Width, Window.ClientBounds.Height);
             _spriteBatch.Begin();
             _spriteBatch.Draw(_backgroundTexture, rectangle, Color.White);
             _spriteBatch.Draw(_ballTexture, _ballRectangle, Color.White);
@@ -143,6 +121,90 @@ namespace SoccerSimulation
             _spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private bool IsGoalLanded()
+        {
+            bool isGoal = false;
+            if (_ballPosition.Y < _goalLine)
+            {
+                isGoal = (_ballPosition.X > _leftGate) && (_ballPosition.X < _rightGate);
+                using (StreamWriter sw = File.AppendText("goal.txt"))
+                {
+                    sw.WriteLine("Coordinates: [{0}, {1}] is goal: {2}", _coordinates[0], _coordinates[1], isGoal);
+                }
+
+                _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
+
+                SetNewVelocity();
+            }
+
+            return isGoal;
+        }
+
+        private bool IsGoalKeeperDefended()
+        {
+            bool isGoal = true;
+            if (_goalkeeperRectangle.Intersects(_ballRectangle))
+            {
+                isGoal = false;
+                using (StreamWriter sw = File.AppendText("goal.txt"))
+                {
+                    sw.WriteLine("Coordinates: [{0}, {1}] is goal: {2}", _coordinates[0], _coordinates[1], isGoal);
+                }
+
+                _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
+
+                SetNewVelocity();
+            }
+
+            return isGoal;
+        }
+
+        private void UpdateGoalKeeper()
+        {
+            if (_goalkeeperRectangle.X <= _leftGate)
+            {
+                _switchGoalKeeperSideMoving = 1;
+            }
+            else if (_goalkeeperRectangle.X >= _rightGate)
+            {
+                _switchGoalKeeperSideMoving = -1;
+            }
+
+            _goalkeeperRectangle.X += 1 * _switchGoalKeeperSideMoving;
+        }
+
+        private void SetNewVelocity()
+        {
+            int[] newVelocities = GetVelocitiesFromSocketClient();
+            float normalizedXVelocity = newVelocities[0] / 10;
+            float normalizedYVelocity = newVelocities[1] / 10;
+
+            Random rand = new Random();
+            float shootDirection = 1;
+            if (rand.Next(1) <= 0.5)
+            {
+                shootDirection = -1;
+            }
+
+            _coordinates[0] = normalizedXVelocity * shootDirection;
+            _coordinates[1] = normalizedYVelocity;
+        }
+
+        private int[] GetVelocitiesFromSocketClient()
+        {
+            Socket acceptedSocket = _socket.Accept();
+            int xCoordinate;
+            int yCoordinate;
+
+            using (NetworkStream stream = new NetworkStream(acceptedSocket, true))
+            {
+                xCoordinate = stream.ReadByte();
+                yCoordinate = stream.ReadByte();
+            }
+
+            return new int[] { xCoordinate, yCoordinate };
         }
     }
 }

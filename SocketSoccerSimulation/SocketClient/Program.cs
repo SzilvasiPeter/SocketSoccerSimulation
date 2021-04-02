@@ -14,25 +14,44 @@ namespace SocketClient
                 socket.Connect(endPoint);
                 using (NetworkStream stream = new NetworkStream(socket, true))
                 {
-                    int length = 3;
-                    byte[] data = new byte[length];
-                    Random random = new Random();
-                    for (int i = 0; i < length; i++)
-                    {
-                        data[i] = (byte)random.Next(255);
-                    }
-
-                    foreach (var singleByte in data)
-                    {
-                        Console.WriteLine(singleByte);
-                    }
-
-                    stream.WriteByte((byte)length);
-                    stream.Write(data, 0, length);
+                    ReadTwoByte(stream);
+                    // ReadToByteBuffer(stream);
                 }
             }
 
             Console.ReadLine();
+        }
+
+        private static void ReadTwoByte(NetworkStream stream)
+        {
+            Random random = new Random();
+            byte xCoordinate = (byte)(random.Next(11) + 1);
+            byte yCoordinate = (byte)(random.Next(91) + 10);
+
+            stream.WriteByte(xCoordinate);
+            stream.WriteByte(yCoordinate);
+
+            Console.WriteLine(xCoordinate);
+            Console.WriteLine(yCoordinate);
+        }
+
+        private static void ReadToByteBuffer(NetworkStream stream)
+        {
+            int length = 2;
+            byte[] data = new byte[length];
+            Random random = new Random();
+            for (int i = 0; i < length; i++)
+            {
+                data[i] = (byte)(random.Next(100) + 1);
+            }
+
+            foreach (var singleByte in data)
+            {
+                Console.WriteLine(singleByte);
+            }
+
+            stream.WriteByte((byte)length);
+            stream.Write(data, 0, length);
         }
     }
 }
