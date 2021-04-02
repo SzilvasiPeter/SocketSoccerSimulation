@@ -28,6 +28,7 @@ namespace SoccerSimulation
         private Vector2 _initialBallPosition;
 
         private Socket _socket;
+        private object _lockObject = new object();
         private float[] _coordinates = new float[2] { -1f, 5f };
 
         public Game1()
@@ -136,7 +137,7 @@ namespace SoccerSimulation
 
                 _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
 
-                SetNewVelocity();
+                BeginUpdatingVelocities();
             }
 
             return isGoal;
@@ -155,7 +156,7 @@ namespace SoccerSimulation
 
                 _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
 
-                SetNewVelocity();
+                BeginUpdatingVelocities();
             }
 
             return isGoal;
@@ -175,36 +176,43 @@ namespace SoccerSimulation
             _goalkeeperRectangle.X += 1 * _switchGoalKeeperSideMoving;
         }
 
-        private void SetNewVelocity()
+        private void BeginUpdatingVelocities()
         {
-            int[] newVelocities = GetVelocitiesFromSocketClient();
-            float normalizedXVelocity = newVelocities[0] / 10;
-            float normalizedYVelocity = newVelocities[1] / 10;
-
-            Random rand = new Random();
-            float shootDirection = 1;
-            if (rand.Next(1) <= 0.5)
-            {
-                shootDirection = -1;
-            }
-
-            _coordinates[0] = normalizedXVelocity * shootDirection;
-            _coordinates[1] = normalizedYVelocity;
+            _socket.BeginAccept(new AsyncCallback(UpdateVelocities), _socket);
+            lock (_lockObject) { }
         }
 
-        private int[] GetVelocitiesFromSocketClient()
+        private void UpdateVelocities(IAsyncResult result)
         {
-            Socket acceptedSocket = _socket.Accept();
-            int xCoordinate;
-            int yCoordinate;
-
-            using (NetworkStream stream = new NetworkStream(acceptedSocket, true))
+            lock (_lockObject)
             {
-                xCoordinate = stream.ReadByte();
-                yCoordinate = stream.ReadByte();
-            }
+                Socket listener = (Socket)result.AsyncState;
+                Socket acceptedSocket = listener.EndAccept(result);
 
-            return new int[] { xCoordinate, yCoordinate };
+                int xCoordinate;
+                int yCoordinate;
+
+                using (NetworkStream stream = new NetworkStream(acceptedSocket, true))
+                {
+                    xCoordinate = stream.ReadByte();
+                    yCoordinate = stream.ReadByte();
+                }
+
+                int[] newVelocities = new int[] { xCoordinate, yCoordinate };
+
+                float normalizedXVelocity = newVelocities[0] / 10;
+                float normalizedYVelocity = newVelocities[1] / 10;
+
+                Random rand = new Random();
+                float shootDirection = 1;
+                if (rand.Next(1) <= 0.5)
+                {
+                    shootDirection = -1;
+                }
+
+                _coordinates[0] = normalizedXVelocity * shootDirection;
+                _coordinates[1] = normalizedYVelocity;
+            }
         }
     }
 }
