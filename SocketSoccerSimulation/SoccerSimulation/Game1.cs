@@ -2,7 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-
+using System.Threading;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -28,8 +28,9 @@ namespace SoccerSimulation
         private Vector2 _initialBallPosition;
 
         private Socket _socket;
-        private object _lockObject = new object();
-        private float[] _coordinates = new float[2] { -1f, 5f };
+        private readonly object _lockObject = new object();
+        private readonly ManualResetEvent _resetEvent = new ManualResetEvent(false);
+        private readonly float[] _coordinates = new float[2] { -1f, 5f };
 
         public Game1()
         {
@@ -62,6 +63,7 @@ namespace SoccerSimulation
 
         protected override void Update(GameTime gameTime)
         {
+            _resetEvent.Reset();
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
@@ -129,10 +131,11 @@ namespace SoccerSimulation
             bool isGoal = false;
             if (_ballPosition.Y < _goalLine)
             {
+                _resetEvent.Set();
                 isGoal = (_ballPosition.X > _leftGate) && (_ballPosition.X < _rightGate);
                 using (StreamWriter sw = File.AppendText("goal.txt"))
                 {
-                    sw.WriteLine("Coordinates: [{0}, {1}] is goal: {2}", _coordinates[0], _coordinates[1], isGoal);
+                    sw.WriteLine("Coordinates velocities (x, y): [{0}, {1}] is goal: {2}", _coordinates[0], _coordinates[1], isGoal);
                 }
 
                 _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
@@ -148,10 +151,11 @@ namespace SoccerSimulation
             bool isGoal = true;
             if (_goalkeeperRectangle.Intersects(_ballRectangle))
             {
+                _resetEvent.Set();
                 isGoal = false;
                 using (StreamWriter sw = File.AppendText("goal.txt"))
                 {
-                    sw.WriteLine("Coordinates: [{0}, {1}] is goal: {2}", _coordinates[0], _coordinates[1], isGoal);
+                    sw.WriteLine("Coordinate velocities (x, y): [{0}, {1}] is goal: {2}", _coordinates[0], _coordinates[1], isGoal);
                 }
 
                 _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
@@ -184,35 +188,33 @@ namespace SoccerSimulation
 
         private void UpdateVelocities(IAsyncResult result)
         {
-            lock (_lockObject)
+            _resetEvent.WaitOne();
+            Socket listener = (Socket)result.AsyncState;
+            Socket acceptedSocket = listener.EndAccept(result);
+
+            int xCoordinate;
+            int yCoordinate;
+
+            using (NetworkStream stream = new NetworkStream(acceptedSocket, true))
             {
-                Socket listener = (Socket)result.AsyncState;
-                Socket acceptedSocket = listener.EndAccept(result);
-
-                int xCoordinate;
-                int yCoordinate;
-
-                using (NetworkStream stream = new NetworkStream(acceptedSocket, true))
-                {
-                    xCoordinate = stream.ReadByte();
-                    yCoordinate = stream.ReadByte();
-                }
-
-                int[] newVelocities = new int[] { xCoordinate, yCoordinate };
-
-                float normalizedXVelocity = newVelocities[0] / 10;
-                float normalizedYVelocity = newVelocities[1] / 10;
-
-                Random rand = new Random();
-                float shootDirection = 1;
-                if (rand.Next(1) <= 0.5)
-                {
-                    shootDirection = -1;
-                }
-
-                _coordinates[0] = normalizedXVelocity * shootDirection;
-                _coordinates[1] = normalizedYVelocity;
+                xCoordinate = stream.ReadByte();
+                yCoordinate = stream.ReadByte();
             }
+
+            int[] newVelocities = new int[] { xCoordinate, yCoordinate };
+
+            float normalizedXVelocity = newVelocities[0] / 10;
+            float normalizedYVelocity = newVelocities[1] / 10;
+
+            Random rand = new Random();
+            float shootDirection = 1;
+            if (rand.Next(1) <= 0.5)
+            {
+                shootDirection = -1;
+            }
+
+            _coordinates[0] = normalizedXVelocity * shootDirection;
+            _coordinates[1] = normalizedYVelocity;
         }
     }
 }
