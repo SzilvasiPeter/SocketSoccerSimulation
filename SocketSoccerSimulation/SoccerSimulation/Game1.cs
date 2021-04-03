@@ -188,33 +188,36 @@ namespace SoccerSimulation
 
         private void UpdateVelocities(IAsyncResult result)
         {
-            _resetEvent.WaitOne();
-            Socket listener = (Socket)result.AsyncState;
-            Socket acceptedSocket = listener.EndAccept(result);
-
-            int xCoordinate;
-            int yCoordinate;
-
-            using (NetworkStream stream = new NetworkStream(acceptedSocket, true))
+            lock (_lockObject)
             {
-                xCoordinate = stream.ReadByte();
-                yCoordinate = stream.ReadByte();
+                _resetEvent.WaitOne();
+                Socket listener = (Socket)result.AsyncState;
+                Socket acceptedSocket = listener.EndAccept(result);
+
+                int xCoordinate;
+                int yCoordinate;
+
+                using (NetworkStream stream = new NetworkStream(acceptedSocket, true))
+                {
+                    xCoordinate = stream.ReadByte();
+                    yCoordinate = stream.ReadByte();
+                }
+
+                int[] newVelocities = new int[] { xCoordinate, yCoordinate };
+
+                float normalizedXVelocity = newVelocities[0] / 10;
+                float normalizedYVelocity = newVelocities[1] / 10;
+
+                Random rand = new Random();
+                float shootDirection = 1;
+                if (rand.Next(1) <= 0.5)
+                {
+                    shootDirection = -1;
+                }
+
+                _coordinates[0] = normalizedXVelocity * shootDirection;
+                _coordinates[1] = normalizedYVelocity;
             }
-
-            int[] newVelocities = new int[] { xCoordinate, yCoordinate };
-
-            float normalizedXVelocity = newVelocities[0] / 10;
-            float normalizedYVelocity = newVelocities[1] / 10;
-
-            Random rand = new Random();
-            float shootDirection = 1;
-            if (rand.Next(1) <= 0.5)
-            {
-                shootDirection = -1;
-            }
-
-            _coordinates[0] = normalizedXVelocity * shootDirection;
-            _coordinates[1] = normalizedYVelocity;
         }
     }
 }
