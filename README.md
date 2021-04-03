@@ -1,6 +1,7 @@
 # SocketSoccerSimulation
 Soccer simulation using Socket server client communication.
 
+- Tune ball velocities to shoot ball to the left side.
 - Get Goal keeper velocity from Socket (SocketGoalKeeperClient)
 - Goal keeper velocity according to ball velocity (SocketBallClient)
 - Using DataContract serializer with MemoryStream
