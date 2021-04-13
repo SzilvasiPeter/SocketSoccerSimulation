@@ -8,18 +8,22 @@ namespace SocketClient
     {
         static void Main(string[] args)
         {
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Loopback, 5500);
-            using (Socket socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+            while (true)
             {
-                socket.Connect(endPoint);
-                using (NetworkStream stream = new NetworkStream(socket, true))
+                IPEndPoint endPoint = new IPEndPoint(IPAddress.Loopback, 5500);
+                using (Socket socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
                 {
-                    ReadTwoByte(stream);
-                    // ReadToByteBuffer(stream);
+                    socket.Connect(endPoint);
+                    using (NetworkStream stream = new NetworkStream(socket, true))
+                    {
+                        ReadTwoByte(stream);
+                        // ReadToByteBuffer(stream);
+                    }
                 }
+                Console.WriteLine("Press any key for new shot");
+                Console.ReadLine();
             }
-
-            Console.ReadLine();
+   
         }
 
         private static void ReadTwoByte(NetworkStream stream)
