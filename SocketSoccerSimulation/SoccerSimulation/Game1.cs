@@ -182,7 +182,6 @@ namespace SoccerSimulation
         private void UpdateGoalKeeper()
         {
             _goalkeeperRectangle.X =(int)MathHelper.Lerp(_goalkeeperRectangle.X, _switchGoalKeeperSideMoving, 0.1f);
-       //   += _switchGoalKeeperSideMoving/10;
         }
 
         private void BeginUpdatingVelocities()
@@ -229,7 +228,7 @@ namespace SoccerSimulation
 
                 _coordinates[0] = normalizedXVelocity * shootDirection;
                 _coordinates[1] = normalizedYVelocity;
-              
+             
             }
 
         }

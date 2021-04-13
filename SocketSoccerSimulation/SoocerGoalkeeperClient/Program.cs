@@ -1,14 +1,14 @@
-﻿using System;
+﻿using SoccerSimulation.Modell;
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using SoccerSimulation.Modell;
 
 namespace SoocerGoalkeeperClient
 {
-    class Program
+    internal class Program
     {
         public static Socket _socket;
 
@@ -19,6 +19,7 @@ namespace SoocerGoalkeeperClient
             TcpListener myList = new TcpListener(ipAd, 8001);
 
             while (true)
+            {
                 try
                 {
                     myList.Start();
@@ -27,17 +28,28 @@ namespace SoocerGoalkeeperClient
                     //recive
                     byte[] MessageRecive = new byte[1000];
                     s.Receive(MessageRecive);
-                    var MessageReciveString = System.Text.Encoding.Default.GetString(MessageRecive).Split("\0")
+                    string MessageReciveString = Encoding.Default.GetString(MessageRecive).Split("\0")
                         .FirstOrDefault();
-                    var shot = JsonSerializer.Deserialize<SoccerSimulation.Modell.Shot>(MessageReciveString);
+                    Shot shot = JsonSerializer.Deserialize<Shot>(MessageReciveString);
                     //calc
 
                     //send
+                    double minimum = shot.ScreenWidth * 0.375;
+                    double maximum = shot.ScreenWidth * 0.623;
+                    double middle = (minimum + maximum) / 2;
+                    double x = (maximum-middle)/60*shot.X;
+                    if (new Random().Next(1) <= 0.5)
+                    {
+                        x = -x;
+                    }
+              
+              
+                    GoalkeeperRequestedPosition MessageSend = new GoalkeeperRequestedPosition
+                        { X = (int)(x+ middle)};
 
-                   var minimum = shot.ScreenWidth * 0.375;
-                    var maximum= shot.ScreenWidth * 0.623;
-                    var MessageSend = new GoalkeeperRequestedPosition() { X =(int) (new Random().Next((int)minimum,(int)maximum))};
-                    s.Send(System.Text.Encoding.Default.GetBytes(JsonSerializer.Serialize(MessageSend)));
+                   
+                
+                    s.Send(Encoding.Default.GetBytes(JsonSerializer.Serialize(MessageSend)));
                     Console.WriteLine("end");
                     s.Close();
                 }
@@ -46,6 +58,7 @@ namespace SoocerGoalkeeperClient
                     Console.WriteLine("Error..... " + e.StackTrace);
                     myList.Stop();
                 }
+            }
 
             //close
 
