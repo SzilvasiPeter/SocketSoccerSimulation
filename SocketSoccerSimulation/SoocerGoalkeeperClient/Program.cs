@@ -33,19 +33,22 @@ namespace SoocerGoalkeeperClient
                     Shot shot = JsonSerializer.Deserialize<Shot>(MessageReciveString);
                     //calc
 
+                    Random rand = new Random();
+                    float shootDirection = 1;
+                    if (rand.Next(100) <= 50)
+                    {
+                        shootDirection = -1;
+                    }
                     //send
                     double minimum = shot.ScreenWidth * 0.375;
                     double maximum = shot.ScreenWidth * 0.623;
                     double middle = (minimum + maximum) / 2;
-                    double x = (maximum-middle)/60*shot.X;
-                    if (new Random().Next(1) <= 0.5)
-                    {
-                        x = -x;
-                    }
-              
-              
+                    var range = (maximum - minimum);
+                    var oneUnitPixelrange = range / 20;
+                    var shotPixelRange = oneUnitPixelrange * shot.X* shootDirection;
+                    var shotPixelRangeReal = shotPixelRange + middle;
                     GoalkeeperRequestedPosition MessageSend = new GoalkeeperRequestedPosition
-                        { X = (int)(x+ middle)};
+                        { X = (int)(shotPixelRangeReal) };
 
                    
                 

@@ -30,7 +30,7 @@ namespace SocketClient
         {
             Random random = new Random();
             byte xCoordinate = (byte)(random.Next(11) + 1);
-            byte yCoordinate = (byte)(random.Next(91) + 10);
+            byte yCoordinate = (byte)(random.Next(50) + 1);
 
             stream.WriteByte(xCoordinate);
             stream.WriteByte(yCoordinate);

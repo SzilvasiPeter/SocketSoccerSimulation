@@ -36,7 +36,7 @@ namespace SoccerSimulation
         private Socket _socket;
         private readonly object _lockObject = new object();
         private readonly ManualResetEvent _resetEvent = new ManualResetEvent(false);
-        private readonly float[] _coordinates = new float[2] { -1f, 5f };
+        private readonly float[] _coordinates = new float[2] {400f, 0.01f };
 
         public Game1()
         {
@@ -75,8 +75,9 @@ namespace SoccerSimulation
                 Exit();
 
             // Shoot the ball
-            _ballPosition.X -= _coordinates[0];
-            _ballPosition.Y -= _coordinates[1];
+
+            _ballPosition.X = (int)MathHelper.LerpPrecise(_ballPosition.X, _coordinates[0], _coordinates[1]);
+            _ballPosition.Y = (int)MathHelper.LerpPrecise(_ballPosition.Y, 0, _coordinates[1]);
 
             UpdateGoalKeeper();
             IsGoalKeeperDefended();
@@ -214,20 +215,24 @@ namespace SoccerSimulation
                 {
                     GoalKeeper(new Shot() {X = xCoordinate, Y = yCoordinate, Strength = 0, ScreenWidth = _screenWidth});
                 });
-                int[] newVelocities = new int[] { xCoordinate, yCoordinate };
-
-                float normalizedXVelocity = newVelocities[0] / 10;
-                float normalizedYVelocity = newVelocities[1] / 10;
-
+    
                 Random rand = new Random();
                 float shootDirection = 1;
-                if (rand.Next(1) <= 0.5)
+                if (rand.Next(100) <= 50)
                 {
                     shootDirection = -1;
                 }
 
-                _coordinates[0] = normalizedXVelocity * shootDirection;
-                _coordinates[1] = normalizedYVelocity;
+                double minimum = _screenWidth * 0.375;
+                double maximum = _screenWidth * 0.623;
+                double middle = (minimum + maximum) / 2;
+                var range = (maximum - minimum);
+                var oneUnitPixelrange = range / 20;
+                var shotPixelRange = oneUnitPixelrange * xCoordinate * shootDirection;
+                var shotPixelRangeReal = shotPixelRange + middle;
+
+                _coordinates[0] = (float)shotPixelRangeReal;
+                _coordinates[1] = (float)yCoordinate /1000;
              
             }
 
