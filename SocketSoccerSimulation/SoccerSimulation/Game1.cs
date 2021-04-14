@@ -1,42 +1,41 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using SoccerSimulation.Modell;
+using System;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using SoccerSimulation.Modell;
 
 namespace SoccerSimulation
 {
     public class Game1 : Game
     {
-        private SpriteBatch _spriteBatch;
+        private readonly float[] _coordinates = new float[2] { 400f, 0.01f };
+        private readonly object _lockObject = new object();
+        private readonly ManualResetEvent _resetEvent = new ManualResetEvent(false);
         private Texture2D _backgroundTexture;
+        private Vector2 _ballPosition;
+        private Rectangle _ballRectangle;
         private Texture2D _ballTexture;
+        private Rectangle _goalkeeperRectangle;
         private Texture2D _goalkeeperTexture;
-
-        private int _switchGoalKeeperSideMoving = 0;
+        private double _goalLine;
+        private Vector2 _initialBallPosition;
 
         private double _leftGate;
         private double _rightGate;
-        private double _goalLine;
         private int _screenWidth;
-        private Rectangle _ballRectangle;
-        private Rectangle _goalkeeperRectangle;
-        private Vector2 _ballPosition;
-        private Vector2 _initialBallPosition;
 
         private Socket _socket;
-        private readonly object _lockObject = new object();
-        private readonly ManualResetEvent _resetEvent = new ManualResetEvent(false);
-        private readonly float[] _coordinates = new float[2] {400f, 0.01f };
+        private SpriteBatch _spriteBatch;
+
+        private int _switchGoalKeeperSideMoving;
 
         public Game1()
         {
@@ -182,12 +181,12 @@ namespace SoccerSimulation
         //itt a kapus
         private void UpdateGoalKeeper()
         {
-            _goalkeeperRectangle.X =(int)MathHelper.Lerp(_goalkeeperRectangle.X, _switchGoalKeeperSideMoving, 0.1f);
+            _goalkeeperRectangle.X = (int)MathHelper.Lerp(_goalkeeperRectangle.X, _switchGoalKeeperSideMoving, 0.1f);
         }
 
         private void BeginUpdatingVelocities()
         {
-            _socket.BeginAccept(new AsyncCallback(UpdateVelocities), _socket);
+            _socket.BeginAccept(UpdateVelocities, _socket);
             lock (_lockObject)
             {
             }
@@ -195,7 +194,6 @@ namespace SoccerSimulation
 
         private void UpdateVelocities(IAsyncResult result)
         {
-           
             //Itt a kliens küld event
             lock (_lockObject)
             {
@@ -211,31 +209,36 @@ namespace SoccerSimulation
                     xCoordinate = stream.ReadByte();
                     yCoordinate = stream.ReadByte();
                 }
+
                 Task.Run(() =>
                 {
-                    GoalKeeper(new Shot() {X = xCoordinate, Y = yCoordinate, Strength = 0, ScreenWidth = _screenWidth});
+                    GoalKeeper(
+                        new Shot { X = xCoordinate, Y = yCoordinate, Strength = 0, ScreenWidth = _screenWidth });
                 });
-    
-                Random rand = new Random();
-                float shootDirection = 1;
-                if (rand.Next(100) <= 50)
-                {
-                    shootDirection = -1;
-                }
 
-                double minimum = _screenWidth * 0.375;
-                double maximum = _screenWidth * 0.623;
-                double middle = (minimum + maximum) / 2;
-                var range = (maximum - minimum);
-                var oneUnitPixelrange = range / 20;
-                var shotPixelRange = oneUnitPixelrange * xCoordinate * shootDirection;
-                var shotPixelRangeReal = shotPixelRange + middle;
-
+                var shotPixelRangeReal = CalculatePixelCoordinate(xCoordinate);
                 _coordinates[0] = (float)shotPixelRangeReal;
-                _coordinates[1] = (float)yCoordinate /1000;
-             
+                _coordinates[1] = (float)yCoordinate / 1000;
+            }
+        }
+
+        private double CalculatePixelCoordinate(int xCoordinate)
+        {
+            Random rand = new Random();
+            float shootDirection = 1;
+            if (rand.Next(100) <= 50)
+            {
+                shootDirection = -1;
             }
 
+            double minimum = _screenWidth * 0.375;
+            double maximum = _screenWidth * 0.623;
+            double middle = (minimum + maximum) / 2;
+            double range = maximum - minimum;
+            double oneUnitPixelrange = range / 20;
+            double shotPixelRange = oneUnitPixelrange * xCoordinate * shootDirection;
+            double shotPixelRangeReal = shotPixelRange + middle;
+            return shotPixelRangeReal;
         }
 
         private void GoalKeeper(Shot shoot)
@@ -248,17 +251,18 @@ namespace SoccerSimulation
                 Stream GoalKeeperStream = tcpClient.GetStream();
 
                 //send
-                byte[] MessageSend = System.Text.Encoding.Default.GetBytes(JsonSerializer.Serialize(shoot));
+                byte[] MessageSend = Encoding.Default.GetBytes(JsonSerializer.Serialize(shoot));
                 GoalKeeperStream.Write(MessageSend, 0, MessageSend.Length);
 
                 //recive
                 byte[] MessageRecive = new byte[1000];
                 GoalKeeperStream.Read(MessageRecive, 0, MessageRecive.Length);
-                var MessageReciveString =
-                    System.Text.Encoding.Default.GetString(MessageRecive).Split("\0").FirstOrDefault();
-                var goalkeeperRequestedPosition = JsonSerializer.Deserialize<GoalkeeperRequestedPosition>(MessageReciveString);
-                 _switchGoalKeeperSideMoving = goalkeeperRequestedPosition.X;
-         
+                string MessageReciveString =
+                    Encoding.Default.GetString(MessageRecive).Split("\0").FirstOrDefault();
+                GoalkeeperRequestedPosition goalkeeperRequestedPosition =
+                    JsonSerializer.Deserialize<GoalkeeperRequestedPosition>(MessageReciveString);
+                _switchGoalKeeperSideMoving = goalkeeperRequestedPosition.X;
+
                 //close
                 GoalKeeperStream.Close();
             }
@@ -268,8 +272,5 @@ namespace SoccerSimulation
                 Console.WriteLine("Error..... " + e.StackTrace);
             }
         }
-
     }
-
-
 }

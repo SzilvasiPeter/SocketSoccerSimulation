@@ -10,8 +10,7 @@ namespace SoocerGoalkeeperClient
 {
     internal class Program
     {
-        public static Socket _socket;
-
+      
         public static void Main()
         {
             //init
@@ -25,33 +24,19 @@ namespace SoocerGoalkeeperClient
                     myList.Start();
                     Socket s = myList.AcceptSocket();
                     Console.WriteLine("Connection accepted from " + s.RemoteEndPoint);
+                 
                     //recive
                     byte[] MessageRecive = new byte[1000];
                     s.Receive(MessageRecive);
                     string MessageReciveString = Encoding.Default.GetString(MessageRecive).Split("\0")
                         .FirstOrDefault();
                     Shot shot = JsonSerializer.Deserialize<Shot>(MessageReciveString);
-                    //calc
-
-                    Random rand = new Random();
-                    float shootDirection = 1;
-                    if (rand.Next(100) <= 50)
-                    {
-                        shootDirection = -1;
-                    }
-                    //send
-                    double minimum = shot.ScreenWidth * 0.375;
-                    double maximum = shot.ScreenWidth * 0.623;
-                    double middle = (minimum + maximum) / 2;
-                    var range = (maximum - minimum);
-                    var oneUnitPixelrange = range / 20;
-                    var shotPixelRange = oneUnitPixelrange * shot.X* shootDirection;
-                    var shotPixelRangeReal = shotPixelRange + middle;
-                    GoalkeeperRequestedPosition MessageSend = new GoalkeeperRequestedPosition
-                        { X = (int)(shotPixelRangeReal) };
-
                    
-                
+                    //calc
+                    var shotPixelRangeReal = CalculatePixelCoordinate(shot);
+
+                    //send
+                    GoalkeeperRequestedPosition MessageSend = new GoalkeeperRequestedPosition { X = (int)shotPixelRangeReal };
                     s.Send(Encoding.Default.GetBytes(JsonSerializer.Serialize(MessageSend)));
                     Console.WriteLine("end");
                     s.Close();
@@ -66,6 +51,25 @@ namespace SoocerGoalkeeperClient
             //close
 
             myList.Stop();
+        }
+
+        private static double CalculatePixelCoordinate(Shot shot)
+        {
+            Random rand = new Random();
+            float shootDirection = 1;
+            if (rand.Next(100) <= 50)
+            {
+                shootDirection = -1;
+            }
+
+            double minimum = shot.ScreenWidth * 0.375;
+            double maximum = shot.ScreenWidth * 0.623;
+            double middle = (minimum + maximum) / 2;
+            double range = maximum - minimum;
+            double oneUnitPixelrange = range / 20;
+            double shotPixelRange = oneUnitPixelrange * shot.X * shootDirection;
+            double shotPixelRangeReal = shotPixelRange + middle;
+            return shotPixelRangeReal;
         }
     }
 }
