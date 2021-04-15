@@ -57,7 +57,7 @@ namespace SoocerGoalkeeperClient
         {
             Random rand = new Random();
             float shootDirection = 1;
-            if (rand.Next(100) <= 50)
+            if (rand.Next(100) <= 75)
             {
                 shootDirection = -1;
             }

@@ -75,9 +75,10 @@ namespace SoccerSimulation
 
             // Shoot the ball
 
-            _ballPosition.X = (int)MathHelper.LerpPrecise(_ballPosition.X, _coordinates[0], _coordinates[1]);
-            _ballPosition.Y = (int)MathHelper.LerpPrecise(_ballPosition.Y, 0, _coordinates[1]);
+            _ballPosition.X = (int) _ballPosition.X + (_coordinates[0] - _ballPosition.X) * _coordinates[1];//(int)MathHelper.Lerp(_ballPosition.X, _coordinates[0], _coordinates[1]);
+            _ballPosition.Y = (int)_ballPosition.Y + (0 - _ballPosition.Y) * _coordinates[1];//(int)MathHelper.Lerp(_ballPosition.X, _coordinates[0], _coordinates[1]);
 
+       
             UpdateGoalKeeper();
             IsGoalKeeperDefended();
             IsGoalLanded();
@@ -226,7 +227,7 @@ namespace SoccerSimulation
         {
             Random rand = new Random();
             float shootDirection = 1;
-            if (rand.Next(100) <= 50)
+            if (rand.Next(100) <= 75)
             {
                 shootDirection = -1;
             }
