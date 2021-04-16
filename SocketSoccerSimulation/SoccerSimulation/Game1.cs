@@ -1,36 +1,41 @@
-﻿using System;
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using SoccerSimulation.Modell;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SoccerSimulation
 {
     public class Game1 : Game
     {
-        private SpriteBatch _spriteBatch;
+        private readonly float[] _coordinates = new float[2] { 400f, 0.01f };
+        private readonly object _lockObject = new object();
+        private readonly ManualResetEvent _resetEvent = new ManualResetEvent(false);
         private Texture2D _backgroundTexture;
+        private Vector2 _ballPosition;
+        private Rectangle _ballRectangle;
         private Texture2D _ballTexture;
+        private Rectangle _goalkeeperRectangle;
         private Texture2D _goalkeeperTexture;
-
-        private int _switchGoalKeeperSideMoving = 1;
+        private double _goalLine;
+        private Vector2 _initialBallPosition;
 
         private double _leftGate;
         private double _rightGate;
-        private double _goalLine;
-
-        private Rectangle _ballRectangle;
-        private Rectangle _goalkeeperRectangle;
-        private Vector2 _ballPosition;
-        private Vector2 _initialBallPosition;
+        private int _screenWidth;
 
         private Socket _socket;
-        private readonly object _lockObject = new object();
-        private readonly ManualResetEvent _resetEvent = new ManualResetEvent(false);
-        private readonly float[] _coordinates = new float[2] { -1f, 5f };
+        private SpriteBatch _spriteBatch;
+
+        private int _switchGoalKeeperSideMoving;
 
         public Game1()
         {
@@ -48,7 +53,7 @@ namespace SoccerSimulation
             _socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             _socket.Bind(endPoint);
             _socket.Listen(100);
-            
+
             base.Initialize();
         }
 
@@ -64,13 +69,16 @@ namespace SoccerSimulation
         protected override void Update(GameTime gameTime)
         {
             _resetEvent.Reset();
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed ||
+                Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
             // Shoot the ball
-            _ballPosition.X -= _coordinates[0];
-            _ballPosition.Y -= _coordinates[1];
 
+            _ballPosition.X = (int) _ballPosition.X + (_coordinates[0] - _ballPosition.X) * _coordinates[1];//(int)MathHelper.Lerp(_ballPosition.X, _coordinates[0], _coordinates[1]);
+            _ballPosition.Y = (int)_ballPosition.Y + (0 - _ballPosition.Y) * _coordinates[1];//(int)MathHelper.Lerp(_ballPosition.X, _coordinates[0], _coordinates[1]);
+
+       
             UpdateGoalKeeper();
             IsGoalKeeperDefended();
             IsGoalLanded();
@@ -92,24 +100,27 @@ namespace SoccerSimulation
         {
             int screenWidth = Window.ClientBounds.Width;
             int screenHeight = Window.ClientBounds.Height;
-
+            _screenWidth = screenWidth;
             // Init Gate value
             _leftGate = screenWidth * 0.375;
             _rightGate = screenWidth * 0.623;
             _goalLine = screenHeight * 0.05;
-            
+
             // Init ball
-            var ballDimension = (screenWidth > screenHeight) ? (int)(screenWidth * 0.02) : (int)(screenHeight * 0.035);
+            var ballDimension =
+                (screenWidth > screenHeight) ? (int)(screenWidth * 0.02) : (int)(screenHeight * 0.035);
             _initialBallPosition = new Vector2(screenWidth / 2.0f, screenHeight * 0.8f);
             _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
-            _ballRectangle = new Rectangle((int)_initialBallPosition.X, (int)_initialBallPosition.Y, ballDimension, ballDimension);
+            _ballRectangle = new Rectangle((int)_initialBallPosition.X, (int)_initialBallPosition.Y, ballDimension,
+                ballDimension);
 
             // Init Goal keeper
             int goalKeeperWidth = (int)_goalLine;
             int goalKeeperHeight = (int)(screenWidth * 0.015);
             int goalkeeperPositionX = (screenWidth - goalKeeperWidth) / 2;
             int goalkeeperPositionY = (int)(screenHeight * 0.12);
-            _goalkeeperRectangle = new Rectangle(goalkeeperPositionX, goalkeeperPositionY,goalKeeperWidth, goalKeeperHeight);
+            _goalkeeperRectangle =
+                new Rectangle(goalkeeperPositionX, goalkeeperPositionY, goalKeeperWidth, goalKeeperHeight);
         }
 
         protected override void Draw(GameTime gameTime)
@@ -135,7 +146,8 @@ namespace SoccerSimulation
                 isGoal = (_ballPosition.X > _leftGate) && (_ballPosition.X < _rightGate);
                 using (StreamWriter sw = File.AppendText("goal.txt"))
                 {
-                    sw.WriteLine("Coordinates velocities (x, y): [{0}, {1}] is goal: {2}", _coordinates[0], _coordinates[1], isGoal);
+                    sw.WriteLine("Coordinates velocities (x, y): [{0}, {1}] is goal: {2}", _coordinates[0],
+                        _coordinates[1], isGoal);
                 }
 
                 _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
@@ -155,7 +167,8 @@ namespace SoccerSimulation
                 isGoal = false;
                 using (StreamWriter sw = File.AppendText("goal.txt"))
                 {
-                    sw.WriteLine("Coordinate velocities (x, y): [{0}, {1}] is goal: {2}", _coordinates[0], _coordinates[1], isGoal);
+                    sw.WriteLine("Coordinate velocities (x, y): [{0}, {1}] is goal: {2}", _coordinates[0],
+                        _coordinates[1], isGoal);
                 }
 
                 _ballPosition = new Vector2(_initialBallPosition.X, _initialBallPosition.Y);
@@ -166,28 +179,23 @@ namespace SoccerSimulation
             return isGoal;
         }
 
+        //itt a kapus
         private void UpdateGoalKeeper()
         {
-            if (_goalkeeperRectangle.X <= _leftGate)
-            {
-                _switchGoalKeeperSideMoving = 1;
-            }
-            else if (_goalkeeperRectangle.X >= _rightGate)
-            {
-                _switchGoalKeeperSideMoving = -1;
-            }
-
-            _goalkeeperRectangle.X += 1 * _switchGoalKeeperSideMoving;
+            _goalkeeperRectangle.X = (int)MathHelper.Lerp(_goalkeeperRectangle.X, _switchGoalKeeperSideMoving, 0.1f);
         }
 
         private void BeginUpdatingVelocities()
         {
-            _socket.BeginAccept(new AsyncCallback(UpdateVelocities), _socket);
-            lock (_lockObject) { }
+            _socket.BeginAccept(UpdateVelocities, _socket);
+            lock (_lockObject)
+            {
+            }
         }
 
         private void UpdateVelocities(IAsyncResult result)
         {
+            //Itt a kliens küld event
             lock (_lockObject)
             {
                 _resetEvent.WaitOne();
@@ -203,20 +211,66 @@ namespace SoccerSimulation
                     yCoordinate = stream.ReadByte();
                 }
 
-                int[] newVelocities = new int[] { xCoordinate, yCoordinate };
-
-                float normalizedXVelocity = newVelocities[0] / 10;
-                float normalizedYVelocity = newVelocities[1] / 10;
-
-                Random rand = new Random();
-                float shootDirection = 1;
-                if (rand.Next(1) <= 0.5)
+                Task.Run(() =>
                 {
-                    shootDirection = -1;
-                }
+                    GoalKeeper(
+                        new Shot { X = xCoordinate, Y = yCoordinate, Strength = 0, ScreenWidth = _screenWidth });
+                });
 
-                _coordinates[0] = normalizedXVelocity * shootDirection;
-                _coordinates[1] = normalizedYVelocity;
+                var shotPixelRangeReal = CalculatePixelCoordinate(xCoordinate);
+                _coordinates[0] = (float)shotPixelRangeReal;
+                _coordinates[1] = (float)yCoordinate / 1000;
+            }
+        }
+
+        private double CalculatePixelCoordinate(int xCoordinate)
+        {
+            Random rand = new Random();
+            float shootDirection = 1;
+            if (rand.Next(100) <= 75)
+            {
+                shootDirection = -1;
+            }
+
+            double minimum = _screenWidth * 0.375;
+            double maximum = _screenWidth * 0.623;
+            double middle = (minimum + maximum) / 2;
+            double range = maximum - minimum;
+            double oneUnitPixelrange = range / 20;
+            double shotPixelRange = oneUnitPixelrange * xCoordinate * shootDirection;
+            double shotPixelRangeReal = shotPixelRange + middle;
+            return shotPixelRangeReal;
+        }
+
+        private void GoalKeeper(Shot shoot)
+        {
+            try
+            {
+                //init
+                TcpClient tcpClient = new TcpClient();
+                tcpClient.Connect(IPAddress.Loopback, 8001);
+                Stream GoalKeeperStream = tcpClient.GetStream();
+
+                //send
+                byte[] MessageSend = Encoding.Default.GetBytes(JsonSerializer.Serialize(shoot));
+                GoalKeeperStream.Write(MessageSend, 0, MessageSend.Length);
+
+                //recive
+                byte[] MessageRecive = new byte[1000];
+                GoalKeeperStream.Read(MessageRecive, 0, MessageRecive.Length);
+                string MessageReciveString =
+                    Encoding.Default.GetString(MessageRecive).Split("\0").FirstOrDefault();
+                GoalkeeperRequestedPosition goalkeeperRequestedPosition =
+                    JsonSerializer.Deserialize<GoalkeeperRequestedPosition>(MessageReciveString);
+                _switchGoalKeeperSideMoving = goalkeeperRequestedPosition.X;
+
+                //close
+                GoalKeeperStream.Close();
+            }
+
+            catch (Exception e)
+            {
+                Console.WriteLine("Error..... " + e.StackTrace);
             }
         }
     }

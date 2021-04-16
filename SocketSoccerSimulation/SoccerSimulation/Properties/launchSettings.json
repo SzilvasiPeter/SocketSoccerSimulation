@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SoccerSimulation": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

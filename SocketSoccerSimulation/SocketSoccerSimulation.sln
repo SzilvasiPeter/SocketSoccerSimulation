@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketServer", "SocketServe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketClient", "SocketClient\SocketClient.csproj", "{247F50BD-142B-47A9-B2E1-264481266582}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoccerSimulation", "SoccerSimulation\SoccerSimulation.csproj", "{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoccerSimulation", "SoccerSimulation\SoccerSimulation.csproj", "{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoocerGoalkeeperClient", "SoocerGoalkeeperClient\SoocerGoalkeeperClient.csproj", "{B356FBEC-F90D-4F0B-B769-54F3BC929197}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CAB27F0E-B76E-40E3-86B3-A49B162A83D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B356FBEC-F90D-4F0B-B769-54F3BC929197}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B356FBEC-F90D-4F0B-B769-54F3BC929197}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B356FBEC-F90D-4F0B-B769-54F3BC929197}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B356FBEC-F90D-4F0B-B769-54F3BC929197}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
